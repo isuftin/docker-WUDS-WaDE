@@ -1,0 +1,16 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [NC,L]
+
+# The database for WaDE hard codes all links to http://localhost
+# Instead, create relative links 
+SetOutputFilter INFLATE;SUBSTITUTE;DEFLATE
+AddOutputFilterByType SUBSTITUTE text/html
+AddOutputFilterByType SUBSTITUTE text/xml
+AddOutputFilterByType SUBSTITUTE text/css
+AddOutputFilterByType SUBSTITUTE application/xml
+AddOutputFilterByType SUBSTITUTE application/json
+AddOutputFilterByType SUBSTITUTE application/javascript
+Substitute "s|http://localhost||i"
+Substitute "s|https://localhost||i"

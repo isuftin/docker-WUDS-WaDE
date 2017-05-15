@@ -1,0 +1,34 @@
+---
+version: '3'
+
+networks:
+  wade-network:
+
+services:
+  database:
+    build:
+      context: ./database
+    ports:
+      - "5432:5432"
+    networks:
+      wade-network:
+        aliases:
+          - database
+    env_file:
+      - "compose${DOCKER_WADE_ENV_LOCAL}.env"
+    container_name: wade_database
+  web:
+    build:
+      context: ./web
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      wade-network:
+        aliases:
+          - web
+    env_file:
+      - "compose${DOCKER_WADE_ENV_LOCAL}.env"
+    container_name: wade_web
+    depends_on:
+      - database
