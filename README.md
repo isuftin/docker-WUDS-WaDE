@@ -23,6 +23,35 @@ your own connection information.
 
 ## Docker Compose
 
+### Building the containers
+
+Before launching the containers, you will need to first build them on your local
+system. It is easiest to do so using Docker Compose.
+
+#### __Database Container__
+
+The database container, when building, will use a database backup file that is provided
+by the WaDE project and not included in this repository. The file should be named
+wade.backup and placed into the database subdirectory in this project.
+
+Once placed, the database container may be built by running the command
+`docker-compose build database`
+
+#### __Web Container__
+
+The web container, when building, will use an RPM to install the WaDE website
+onto an Apache server. The RPM is provided by the WaDE project. In the future, it
+will be available through a public artifact repository. The RPM may also be built
+by running the Vagrantfile [here](https://github.com/USGS-CIDA/WUDS_WaDE_OVERLAY/blob/master/rpm_build/Vagrantfile).
+Information about that process can be found [here](https://github.com/USGS-CIDA/WUDS_WaDE_OVERLAY#vagrantfile). This requires
+you to have access to the source GitHub repository for the original WaDE source code.
+
+Once you have the RPM, it should be placed into web/src/wade-web.rpm
+
+The Docker container may then be built by running the command `docker-compose build web`
+
+### Launching the containers
+
 Included is a Docker Compose configuration file which allows you to orchestrate
 the starting and interactivity of the two containers. Simply execute:
 
@@ -30,7 +59,7 @@ the starting and interactivity of the two containers. Simply execute:
 
 If this is your first run, Docker will need to build the containers before running them.
 This may take some time depending on your network connection as well as the speed
-of your computer.
+of your computer. More information about building individual containers is found above.
 
 The database container should start first and the webserver will start afterwards.
 

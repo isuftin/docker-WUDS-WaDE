@@ -17,6 +17,7 @@ services:
     env_file:
       - "compose${DOCKER_WADE_ENV_LOCAL}.env"
     container_name: wade_database
+    
   web:
     build:
       context: ./web
