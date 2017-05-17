@@ -17,7 +17,7 @@ services:
     env_file:
       - "compose${DOCKER_WADE_ENV_LOCAL}.env"
     container_name: wade_database
-    
+
   web:
     build:
       context: ./web
@@ -31,5 +31,16 @@ services:
     env_file:
       - "compose${DOCKER_WADE_ENV_LOCAL}.env"
     container_name: wade_web
+    volumes:
+      - ~/Development/Source/CIDA/WADE_WMA_OVERLAY/webservices/WADE/v0.2/:/var/www/html/dev:ro
     depends_on:
       - database
+
+  jenkins:
+    build:
+      context: ./jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    env_file:
+      - "./jenkins/compose${DOCKER_JENKINS_ENV_LOCAL}.env"
