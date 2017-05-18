@@ -28,6 +28,23 @@ your own connection information.
 Before launching the containers, you will need to first build them on your local
 system. It is easiest to do so using Docker Compose.
 
+#### __Jenkins Container__
+
+Included is a Jenkins Docker container. This container serves as a reference implementation
+of a Jenkins job that creates an RPM for the WaDE project. In the future, this will
+also be expanded to deploy the created binary and source RPMs to an Artifactory
+RPM repository.
+
+In order to properly run the Jenkins job, you will need to define GITHUB_ACCESS_TOKEN
+in `jenkins/compose.env`. This GitHub access token is provided by GitHub in order
+for you to access https://github.com/USGS-CIDA/postgres-fullapp
+
+Once everything is in place, the Jenkins container may be launched by running the
+command `docker-compose up jenkins`
+
+When the Jenkins container is running, you should be able to log into it using
+the username `jenkins` and password `jenkins` and run the `WADE_WEB_RPM_BUILD` job.
+
 #### __Database Container__
 
 The database container, when building, will use a database backup file that is provided
@@ -35,7 +52,7 @@ by the WaDE project and not included in this repository. The file should be name
 wade.backup and placed into the database subdirectory in this project.
 
 Once placed, the database container may be built by running the command
-`docker-compose build database`
+`docker-compose up database`
 
 #### __Web Container__
 
