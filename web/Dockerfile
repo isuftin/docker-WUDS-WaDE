@@ -11,7 +11,7 @@ ENV DATABASE_ADDRESS database
 ENV POSTGRES_DB WADE
 
 RUN apt-get update && \
-	apt-get install -y php5-pgsql libpq-dev alien
+	apt-get install -y php5-pgsql libpq-dev alien libpcre3-dev
 
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql && \
 	docker-php-ext-install pdo pdo_pgsql pgsql
