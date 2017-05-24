@@ -17,7 +17,7 @@
         <net.uaznia.lukanus.hudson.plugins.gitparameter.GitParameterDefinition plugin="git-parameter@0.8.0">
           <name>GIT_OVERLAY_TAG_SELECTOR</name>
           <description></description>
-          <uuid>3a0df686-913c-41ac-98bf-fe7f3dc39110</uuid>
+          <uuid>bcb25477-d57b-49d0-ba4f-389e33a273c1</uuid>
           <type>PT_BRANCH_TAG</type>
           <branch></branch>
           <tagFilter>*</tagFilter>
@@ -80,7 +80,11 @@ mkdir $WORKSPACE/rpmbuild \
   $WORKSPACE/rpmbuild/RPMS \
   $WORKSPACE/rpmbuild/SOURCES \
   $WORKSPACE/rpmbuild/SPECS \
-  $WORKSPACE/rpmbuild/SRPMS</command>
+  $WORKSPACE/rpmbuild/SRPMS
+
+echo &quot;%_topdir      %(echo $WORKSPACE)/rpmbuild&quot; &gt; $WORKSPACE/.rpmmacros
+echo &quot;%_smp_mflags  -j3&quot; &gt;&gt; $WORKSPACE/.rpmmacros
+echo &quot;%__arch_install_post   /usr/lib/rpm/check-rpaths   /usr/lib/rpm/check-buildroot&quot; &gt;&gt; $WORKSPACE/.rpmmacros</command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command>#!/bin/bash
@@ -89,19 +93,17 @@ echo &quot;Downloading original source&quot;
 git clone https://${GITHUB_ACCESS_TOKEN}:x-oauth-basic@github.com/USGS-CIDA/postgres-fullapp.git $WORKSPACE/original/
 
 cd $WORKSPACE/original
-git checkout v$GIT_WADE_POSTGRES_VERSION
-
-</command>
+git checkout v$GIT_WADE_POSTGRES_VERSION</command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 
 if [[ &quot;${GIT_OVERLAY_TAG_SELECTOR}&quot; == &quot;origin/master&quot; ]]; then
-	WADE_VERSION=&quot;SNAPSHOT&quot;
+        WADE_VERSION=`/bin/date +%Y%m%d`
 else
-	WADE_VERSION=${GIT_OVERLAY_TAG_SELECTOR%-*}
+        # Choose everything previous to dash for the version
+        WADE_VERSION=${GIT_OVERLAY_TAG_SELECTOR%-*}
 fi
-
 
 echo &quot;Creating tar package&quot;
 cd $WORKSPACE
@@ -110,40 +112,64 @@ cp -a $WORKSPACE/original/webservices/WADE $WORKSPACE/wade-web-$WADE_VERSION/var
 cp -a $WORKSPACE/overlay/webservices/WADE $WORKSPACE/wade-web-$WADE_VERSION/var/www/html
 tar -zcf $WORKSPACE/wade-web-$WADE_VERSION.tar.gz -C $WORKSPACE ./wade-web-$WADE_VERSION/
 mv $WORKSPACE/wade-web-$WADE_VERSION.tar.gz $WORKSPACE/rpmbuild/SOURCES/
-cp $WORKSPACE/overlay/rpm_build/wade.spec $WORKSPACE/rpmbuild/SPECS/
-</command>
+cp $WORKSPACE/overlay/rpm_build/wade.spec $WORKSPACE/rpmbuild/SPECS/</command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 
-WADE_RELEASE=1
-WADE_EPOCH=1
+
+
+WADE_EPOCH=${WADE_EPOCH:-1}
+
 if [[ &quot;${GIT_OVERLAY_TAG_SELECTOR}&quot; == &quot;origin/master&quot; ]]; then
-	WADE_VERSION=&quot;SNAPSHOT&quot;
+	WADE_VERSION=`/bin/date +%Y%m%d`
+    WADE_RELEASE=0
 else
-	WADE_VERSION=${GIT_OVERLAY_TAG_SELECTOR%-*}
-    WADE_RELEASE=${GIT_OVERLAY_TAG_SELECTOR##*-}
+    # Choose everything previous to dash for the version
+    WADE_VERSION=${GIT_OVERLAY_TAG_SELECTOR%-*}
+    # Choose everything after the dash for the release version
+    WADE_RELEASE=${GIT_OVERLAY_TAG_SELECTOR#*-}
 fi
+
+
 
 cd $WORKSPACE/rpmbuild/SPECS/
 
 rpmbuild \
   --define &quot;_topdir $WORKSPACE/rpmbuild&quot; \
   --define &quot;_smp_mflags  -j3&quot; \
-  --define &quot;__arch_install_post   /usr/lib/rpm/check-rpaths   /usr/lib/rpm/check-buildroot&quot; \
+  --define &quot;__arch_install_post   /usr/lib/rpm/check-rpaths /usr/lib/rpm/check-buildroot&quot; \
   --define &quot;_wade_version $WADE_VERSION&quot; \
   --define &quot;_wade_release $WADE_RELEASE&quot; \
-  --define &quot;_wade_epoch $WADE_EPOCH&quot; \
-  -v -ba wade.spec</command>
+  --define &quot;_wade_epoch $WADE_EPOCH&quot; -v -ba wade.spec</command>
     </hudson.tasks.Shell>
   </builders>
-  <publishers/>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>rpmbuild/**/*.rpm</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+    </hudson.tasks.ArtifactArchiver>
+    <hudson.tasks.BuildTrigger>
+      <childProjects>DEPLOY_WEB_RPM_TO_ARTIFACTORY</childProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </hudson.tasks.BuildTrigger>
+  </publishers>
   <buildWrappers>
     <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.33">
       <deleteDirs>false</deleteDirs>
       <cleanupParameter></cleanupParameter>
       <externalDelete></externalDelete>
     </hudson.plugins.ws__cleanup.PreBuildCleanup>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.8"/>
     <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@1.11">
       <bindings>
         <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>

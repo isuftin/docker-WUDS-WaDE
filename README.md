@@ -35,15 +35,35 @@ of a Jenkins job that creates an RPM for the WaDE project. In the future, this w
 also be expanded to deploy the created binary and source RPMs to an Artifactory
 RPM repository.
 
-In order to properly run the Jenkins job, you will need to define GITHUB_ACCESS_TOKEN
-in `jenkins/compose.env`. This GitHub access token is provided by GitHub in order
+In order to properly run the Jenkins job, you will need to define the following
+in `jenkins/compose.env`:
+
+- GITHUB_ACCESS_TOKEN: This GitHub access token is provided by GitHub in order
 for you to access https://github.com/USGS-CIDA/postgres-fullapp
+- ARTIFACTORY_DEPLOY_USER: This is the username used in Artifactory to deploy RPMs
+- ARTIFACTORY_DEPLOY_PASSWORD: This is the password for ARTIFACTORY_DEPLOY_USER
 
 Once everything is in place, the Jenkins container may be launched by running the
 command `docker-compose up jenkins`
 
 When the Jenkins container is running, you should be able to log into it using
 the username `jenkins` and password `jenkins` and run the `WADE_WEB_RPM_BUILD` job.
+
+This job will build either a release RPM or a snapshot RPM based on whether you choose
+to build from a tag or origin/master in GitHub.
+
+If the RPM build succeeds, this job will trigger the Jenkins job to deploy the
+source and binary RPMs to Artifactory.
+
+They RPMs end up in https://cida.usgs.gov/artifactory/rpm/noarch/RPMS/wuds/ and
+https://cida.usgs.gov/artifactory/rpm/noarch/SRPMS/wuds/
+
+The deploy Jenkins job will not re-deploy an released RPM that already exists in
+Artifactory. It will, however, redeploy a snapshot RPM.
+
+Snapshot RPMs will be named in the formay wade-web-YYYYMMDD-0.rpm
+
+Examples can be found here: https://cida.usgs.gov/artifactory/rpm/noarch/RPMS/wuds/snapshot/
 
 #### __Database Container__
 

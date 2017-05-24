@@ -1,5 +1,5 @@
 wade-web.rpm
 .DS_Store
 wade.backup
-compose_jenkins_local.env
+*_local.env
 root.crt
