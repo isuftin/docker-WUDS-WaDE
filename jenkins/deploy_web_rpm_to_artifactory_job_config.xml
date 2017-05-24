@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>5</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>ARTIFACTORY_URL_BASE</name>
+          <description></description>
+          <defaultValue>https://cida.usgs.gov/artifactory</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.38.1">
+      <project>WADE_WEB_RPM_BUILD</project>
+      <filter>**/*.rpm</filter>
+      <target></target>
+      <excludes></excludes>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+        <upstreamFilterStrategy>UseGlobalSetting</upstreamFilterStrategy>
+        <allowUpstreamDependencies>false</allowUpstreamDependencies>
+      </selector>
+      <flatten>true</flatten>
+      <doNotFingerprintArtifacts>false</doNotFingerprintArtifacts>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash -xe
+
+rpm=`find $WORKSPACE -type f  -name &apos;*[!src].rpm&apos; -printf &quot;%f\n&quot;`
+src_rpm=`find $WORKSPACE -type f  -name &apos;*.src.rpm&apos; -printf &quot;%f\n&quot;`
+version=`rpm -qp --queryformat &apos;%{VERSION}\n&apos; $rpm`
+release=`rpm -qp --queryformat &apos;%{RELEASE}\n&apos; $rpm`
+release_type=&quot;snapshot&quot;
+# Check if this is a snapshot (0) or a release (&gt;1)
+if [[ &quot;$release&quot; &gt; &quot;0&quot; ]]; then
+	release_type=&quot;release&quot;
+	resp_code=`curl -s -o /dev/null -w &quot;%{http_code}&quot;  &quot;${ARTIFACTORY_URL_BASE}/api/storage/rpm/noarch/RPMS/wuds/${release_type}/${rpm}&quot;`
+	if [[ &quot;$resp_code&quot; == &quot;200&quot; ]]; then
+    	echo &quot;RPM at version ${version} release ${release} already exists @ ${ARTIFACTORY_URL_BASE}/rpm/noarch/RPMS/${rpm}&quot;
+        exit 0
+    fi
+fi
+
+curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/noarch/RPMS/wuds/${release_type}/${rpm}&quot;
+curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$src_rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/noarch/SRPMS/wuds/${release_type}/${src_rpm}&quot;</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.33">
+      <deleteDirs>false</deleteDirs>
+      <cleanupParameter></cleanupParameter>
+      <externalDelete></externalDelete>
+    </hudson.plugins.ws__cleanup.PreBuildCleanup>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.8"/>
+    <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@1.11">
+      <bindings>
+        <org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+          <credentialsId>ARTIFACTORY_UPLOADER_CREDENTIALS</credentialsId>
+          <usernameVariable>ARTIFACTORY_DEPLOY_USER</usernameVariable>
+          <passwordVariable>ARTIFACTORY_DEPLOY_PASSWORD</passwordVariable>
+        </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+      </bindings>
+    </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+  </buildWrappers>
+</project>
