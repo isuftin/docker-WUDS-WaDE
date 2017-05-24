@@ -54,15 +54,15 @@ release_type=&quot;snapshot&quot;
 # Check if this is a snapshot (0) or a release (&gt;1)
 if [[ &quot;$release&quot; &gt; &quot;0&quot; ]]; then
 	release_type=&quot;release&quot;
-	resp_code=`curl -s -o /dev/null -w &quot;%{http_code}&quot;  &quot;${ARTIFACTORY_URL_BASE}/api/storage/rpm/noarch/RPMS/wuds/${release_type}/${rpm}&quot;`
+	resp_code=`curl -s -o /dev/null -w &quot;%{http_code}&quot;  &quot;${ARTIFACTORY_URL_BASE}/api/storage/rpm/wade-web/${version}/noarch/${rpm}&quot;`
 	if [[ &quot;$resp_code&quot; == &quot;200&quot; ]]; then
-    	echo &quot;RPM at version ${version} release ${release} already exists @ ${ARTIFACTORY_URL_BASE}/rpm/noarch/RPMS/${rpm}&quot;
+    	echo &quot;RPM at version ${version} release ${release} already exists @ ${ARTIFACTORY_URL_BASE}/rpm/wade-web/${version}/noarch/${rpm}&quot;
         exit 0
     fi
 fi
 
-curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/noarch/RPMS/wuds/${release_type}/${rpm}&quot;
-curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$src_rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/noarch/SRPMS/wuds/${release_type}/${src_rpm}&quot;</command>
+curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/wade-web/${version}/noarch//${rpm}&quot;
+curl -X PUT -u $ARTIFACTORY_DEPLOY_USER:$ARTIFACTORY_DEPLOY_PASSWORD --data-binary @$WORKSPACE/$rpm &quot;${ARTIFACTORY_URL_BASE}/rpm/wade-web/${version}/noarch/${srpm}&quot;</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
