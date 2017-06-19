@@ -19,7 +19,11 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql && \
 RUN a2enmod rewrite
 RUN a2enmod substitute
 
-COPY wade-web.rpm /wade-web.rpm
+COPY root.crt /usr/lib/ssl/certs/local.crt
+RUN	ln -sf /usr/lib/ssl/certs/local.crt /usr/lib/ssl/certs/`openssl x509 -hash -noout -in /usr/lib/ssl/certs/local.crt`.0
+RUN echo "$(cat /usr/lib/ssl/certs/local.crt)" | tee -a /etc/ssl/certs/ca-certificates.crt
+
+RUN curl -o /wade-web.rpm 'https://cida.usgs.gov/artifactory/rpm/wade-web/0.0.1/noarch/wade-web-0.0.1-1.el6.noarch.rpm'
 RUN alien --version=0.2 /wade-web.rpm
 RUN dpkg -i wade-web_0.0.1-2_all.deb && apt-get install -f
 COPY ./src/.htaccess /var/www/html/.htaccess

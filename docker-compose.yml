@@ -21,6 +21,7 @@ services:
   web:
     build:
       context: ./web
+    image: wade_web:0.0.1-1
     ports:
       - "80:80"
       - "443:443"
